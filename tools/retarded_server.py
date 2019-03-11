@@ -2,29 +2,35 @@
 
 import argparse, socket, sys
 
+
 def server(host, port, bytecount):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind((host, port))
     sock.listen(1)
     print('Listening at', sock.getsockname())
+
     while True:
         sc, sockname = sock.accept()
         print('Processing up to 1024 bytes at a time from', sockname)
         n = 0
         while True:
-            data = sc.recv(5)
-            if not data:
-                break
-            #response 422 
-            output = "HTTP/1.1 422 Something weird\r\nServer: nginx/1.8.0\r\nDate: Thu, 29 Oct 2015 14:07:09 GMT\r\nContent-Type: text/html\r\nContent-Length: 1\r\nConnection: close\r\n\r\n1"
-            #data.decode('ascii').upper().encode('ascii')
-            sc.sendall(output)  # send it back uppercase
-            n += len(data)
-            sys.stdout.flush()
+            try:
+                data = sc.recv(5)
+                if not data:
+                    print('no data: %s' % data)
+                # response 422
+                output = "HTTP/1.1 422 Something weird\r\nServer: nginx/1.8.0\r\nDate: Thu, 29 Oct 2015 14:07:09 GMT\r\nContent-Type: text/html\r\nContent-Length: 1\r\nConnection: close\r\n\r\n1"
+                # data.decode('ascii').upper().encode('ascii')
+                sc.sendall(output)  # send it back uppercase
+                n += len(data)
+                sys.stdout.flush()
+            except Exception as exc:
+                print('Exception: %s' % exc)
         print()
         sc.close()
         print('  Socket closed')
+
 
 def client(host, port, bytecount):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -57,6 +63,7 @@ def client(host, port, bytecount):
     print()
     sock.close()
 
+
 if __name__ == '__main__':
     choices = {'client': client, 'server': server}
     parser = argparse.ArgumentParser(description='Get deadlocked over TCP')
@@ -70,3 +77,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
     function = choices[args.role]
     function(args.host, args.p, args.bytecount)
+
+
+
+
